@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, Phone, X } from "lucide-react";
 import { EASE } from "../../lib/motion";
+import { scrollToTop } from "../ui/SmoothScrollWrapper";
 
 const links = [
   { to: "/", label: "Home" },
@@ -14,8 +15,14 @@ const links = [
 ];
 
 function Logo({ dark }: { dark: boolean }) {
+  const { pathname } = useLocation();
   return (
-    <Link to="/" className="group flex items-center gap-2.5" aria-label="Meridian General Hospital — home">
+    <Link
+      to="/"
+      onClick={() => pathname === "/" && scrollToTop()}
+      className="group flex items-center gap-2.5"
+      aria-label="Meridian General Hospital — home"
+    >
       <svg width="34" height="34" viewBox="0 0 34 34" fill="none" aria-hidden>
         <rect width="34" height="34" rx="9" className={dark ? "fill-white/10" : "fill-clinical"} />
         <path
@@ -63,6 +70,20 @@ export default function Nav() {
     };
   }, [open]);
 
+  // Close the mobile menu with the Escape key
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  // Always scroll to top when clicking a nav link for the page we're
+  // already on (pathname wouldn't change, so nothing would happen).
+  const goTo = (to: string) => {
+    if (pathname === to) scrollToTop();
+  };
+
   return (
     <>
       <header
@@ -80,6 +101,7 @@ export default function Nav() {
               <Link
                 key={l.to}
                 to={l.to}
+                onClick={() => goTo(l.to)}
                 className={`link-grow text-[14px] font-medium transition-colors duration-300 ${
                   pathname === l.to
                     ? dark
@@ -107,6 +129,7 @@ export default function Nav() {
             </a>
             <Link
               to="/contact"
+              onClick={() => goTo("/contact")}
               className="rounded-full bg-heal px-6 py-2.5 font-display text-[14px] font-bold text-white transition-all duration-300 hover:bg-clinical"
             >
               Book Now
@@ -132,6 +155,7 @@ export default function Nav() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3, ease: EASE }}
             className="fixed inset-0 z-[90] flex flex-col bg-clinical px-6 pb-10 pt-28 lg:hidden"
+            onClick={() => setOpen(false)}
           >
             <div className="blob-bg pointer-events-none absolute inset-0 opacity-60" />
             <nav className="relative flex flex-col gap-1" aria-label="Mobile">
@@ -144,6 +168,7 @@ export default function Nav() {
                 >
                   <Link
                     to={l.to}
+                    onClick={() => goTo(l.to)}
                     className={`block border-b border-white/10 py-4 font-display text-3xl font-black ${
                       pathname === l.to ? "text-heal-light" : "text-white"
                     }`}
@@ -164,6 +189,7 @@ export default function Nav() {
               </a>
               <Link
                 to="/contact"
+                onClick={() => goTo("/contact")}
                 className="block rounded-full bg-heal py-4 text-center font-display text-lg font-bold text-white"
               >
                 Book an Appointment

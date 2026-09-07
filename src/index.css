@@ -233,4 +233,14 @@ input[type="range"].coverage-slider:focus-visible {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+
+  /* Marquee stays functional (non-essential motion is fine, and a frozen
+     strip mid-scroll looks broken) — just slower and gentler. */
+  .animate-marquee,
+  .animate-marquee * {
+    animation-name: marquee-x !important;
+    animation-duration: 60s !important;
+    animation-iteration-count: infinite !important;
+    animation-timing-function: linear !important;
+  }
 }

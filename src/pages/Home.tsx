@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ComponentType } from "react";
 import { Link } from "react-router-dom";
 import {
   motion,
@@ -21,10 +21,10 @@ import TextReveal from "../components/ui/TextReveal";
 import HolographicCard from "../components/ui/HolographicCard";
 import AnimatedCounter from "../components/ui/AnimatedCounter";
 import MagneticButton from "../components/ui/MagneticButton";
-import { cardVariants, containerVariants, EASE, isTouchDevice, mobileReveal } from "../lib/motion";
+import { cardVariants, containerVariants, EASE, mobileReveal } from "../lib/motion";
 import { departments, journeySteps, testimonials } from "../lib/data";
 
-const deptIcons: Record<string, React.ComponentType<{ size?: number | string; className?: string }>> = {
+const deptIcons: Record<string, ComponentType<{ size?: number | string; className?: string }>> = {
   cardiology: HeartPulse,
   neurology: Brain,
   oncology: Ribbon,
@@ -168,9 +168,9 @@ function Hero() {
       {/* Accreditation marquee */}
       <div className="relative z-10 border-t border-white/12 py-3.5">
         <div className="flex overflow-hidden" aria-hidden>
-          <div className="animate-marquee flex shrink-0 items-center gap-8 pr-8">
-            {[...Array(2)].map((_, dup) => (
-              <div key={dup} className="flex shrink-0 items-center gap-8">
+          <div className="animate-marquee flex shrink-0 items-center">
+            {[...Array(4)].map((_, dup) => (
+              <div key={dup} className="flex shrink-0 items-center gap-8 pr-8">
                 {[
                   "JCI ACCREDITED",
                   "LEVEL I TRAUMA CENTER",
@@ -288,11 +288,22 @@ function DepartmentGrid() {
 function PatientJourney() {
   const ref = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
-  const touch = isTouchDevice();
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches,
+  );
+  const touch = isMobile;
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start 0.85", "end 0.55"],
   });
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+    const handleChange = () => setIsMobile(mediaQuery.matches);
+    handleChange();
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
 
   useMotionValueEvent(scrollYProgress, "change", (v) => {
     if (touch) return;
@@ -319,7 +330,7 @@ function PatientJourney() {
             />
             <div className="relative grid grid-cols-5 gap-6">
               {journeySteps.map((s, i) => (
-                <motion.div key={s.step} {...(touch ? mobileReveal : {})} transition={touch ? mobileReveal.transition : undefined}>
+                <motion.div key={s.step} {...(touch ? mobileReveal : {})}>
                   <motion.div
                     animate={{ scale: i <= shown ? 1 : 0.85 }}
                     transition={{ duration: 0.5, ease: EASE }}
@@ -339,19 +350,32 @@ function PatientJourney() {
           </div>
 
           {/* Mobile vertical */}
-          <div className="relative space-y-10 pl-10 md:hidden">
-            <div className="absolute bottom-2 left-[23px] top-2 w-[3px] rounded-full bg-line" />
-            <div className="absolute bottom-2 left-[23px] top-2 w-[3px] rounded-full bg-heal" />
-            {journeySteps.map((s, i) => (
-              <motion.div key={s.step} {...mobileReveal} className="relative">
-                <div className="absolute -left-10 flex h-12 w-12 items-center justify-center rounded-full border-2 border-heal bg-heal font-display text-[17px] font-black text-white">
-                  {i + 1}
-                </div>
-                <h3 className="pt-1 font-display text-lg font-bold text-clinical">{s.step}</h3>
-                <p className="mt-1.5 text-[14px] leading-relaxed text-ink/80">{s.text}</p>
-              </motion.div>
-            ))}
-          </div>
+          <div className="relative space-y-10 pl-16 md:hidden">
+  <div className="absolute bottom-2 left-6 top-2 w-[3px] rounded-full bg-line" />
+  <motion.div
+    className="absolute left-6 top-2 w-[3px] origin-top rounded-full bg-heal"
+    style={{ scaleY: touch ? 1 : scrollYProgress, height: "calc(100% - 16px)" }}
+  />
+  {journeySteps.map((s, i) => (
+    <motion.div key={s.step} {...mobileReveal} className="relative">
+      <div
+        className={`absolute -left-16 flex h-12 w-12 items-center justify-center rounded-full border-2 font-display text-[17px] font-black transition-colors duration-500 ${
+          i <= shown ? "border-heal bg-heal text-white" : "border-line bg-canvas text-ink/50"
+        }`}
+      >
+        {i + 1}
+      </div>
+      <h3
+        className={`pt-1 font-display text-lg font-bold transition-colors duration-500 ${
+          i <= shown ? "text-clinical" : "text-ink/50"
+        }`}
+      >
+        {s.step}
+      </h3>
+      <p className="mt-1.5 text-[14px] leading-relaxed text-ink/80">{s.text}</p>
+    </motion.div>
+  ))}
+</div>
         </div>
       </div>
     </section>
